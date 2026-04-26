@@ -1,0 +1,1031 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>StudyMind AI — Your Smart Study Companion</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&family=Lora:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet"/>
+<style>
+  :root {
+    --bg: #0a0d14;
+    --surface: #111520;
+    --surface2: #161c2d;
+    --border: #1e2740;
+    --accent: #4f8ef7;
+    --accent2: #a78bfa;
+    --accent3: #34d399;
+    --text: #e8eaf6;
+    --muted: #6b7a99;
+    --danger: #f87171;
+    --warn: #fbbf24;
+    --card: #13192a;
+    --radius: 14px;
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body {
+    font-family: 'Syne', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* ─── Animated BG ─── */
+  body::before {
+    content: '';
+    position: fixed; inset: 0; z-index: 0;
+    background:
+      radial-gradient(ellipse 80% 60% at 10% 0%, rgba(79,142,247,.12) 0%, transparent 60%),
+      radial-gradient(ellipse 60% 50% at 90% 100%, rgba(167,139,250,.10) 0%, transparent 60%),
+      radial-gradient(ellipse 40% 40% at 50% 50%, rgba(52,211,153,.05) 0%, transparent 60%);
+    pointer-events: none;
+  }
+
+  /* ─── Layout ─── */
+  #app { position: relative; z-index: 1; }
+  .screen { display: none; min-height: 100vh; }
+  .screen.active { display: flex; flex-direction: column; }
+
+  /* ─── Navbar ─── */
+  nav {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 18px 32px; border-bottom: 1px solid var(--border);
+    background: rgba(10,13,20,.85); backdrop-filter: blur(20px);
+    position: sticky; top: 0; z-index: 100;
+  }
+  .nav-logo {
+    font-size: 1.4rem; font-weight: 800; letter-spacing: -1px;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  }
+  .nav-logo span { -webkit-text-fill-color: var(--accent3); }
+  .nav-links { display: flex; gap: 8px; }
+  .nav-btn {
+    background: none; border: 1px solid var(--border); color: var(--muted);
+    padding: 8px 18px; border-radius: 8px; cursor: pointer;
+    font-family: 'Syne', sans-serif; font-size: .85rem; transition: all .2s;
+  }
+  .nav-btn:hover, .nav-btn.active { border-color: var(--accent); color: var(--accent); }
+  .nav-btn.primary {
+    background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 600;
+  }
+  .nav-btn.primary:hover { opacity: .85; }
+
+  /* ─── Auth Screen ─── */
+  #authScreen {
+    align-items: center; justify-content: center; padding: 40px 20px;
+    background: var(--bg);
+  }
+  .auth-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 20px; padding: 48px 40px; width: 100%; max-width: 420px;
+    box-shadow: 0 30px 80px rgba(0,0,0,.5);
+    animation: slideUp .5s ease;
+  }
+  @keyframes slideUp { from { opacity:0; transform:translateY(30px); } to { opacity:1; transform:translateY(0); } }
+  .auth-title {
+    font-size: 2rem; font-weight: 800; letter-spacing: -1px; margin-bottom: 6px;
+    background: linear-gradient(135deg, #fff, var(--accent));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  }
+  .auth-sub { color: var(--muted); font-size: .9rem; margin-bottom: 28px; }
+  .tab-row { display: flex; gap: 4px; background: var(--bg); border-radius: 10px; padding: 4px; margin-bottom: 28px; }
+  .tab {
+    flex: 1; padding: 10px; text-align: center; border-radius: 7px; cursor: pointer;
+    font-family: 'Syne', sans-serif; font-size: .9rem; font-weight: 600;
+    color: var(--muted); transition: all .2s; border: none; background: none;
+  }
+  .tab.active { background: var(--accent); color: #fff; }
+
+  .form-group { margin-bottom: 18px; }
+  .form-label { display: block; font-size: .8rem; color: var(--muted); margin-bottom: 6px; letter-spacing: .5px; text-transform: uppercase; }
+  .form-input {
+    width: 100%; background: var(--bg); border: 1px solid var(--border);
+    border-radius: 10px; padding: 13px 16px; color: var(--text);
+    font-family: 'Syne', sans-serif; font-size: .95rem; transition: border-color .2s;
+  }
+  .form-input:focus { outline: none; border-color: var(--accent); }
+  .phone-row { display: flex; gap: 8px; }
+  .country-code {
+    background: var(--bg); border: 1px solid var(--border); color: var(--text);
+    border-radius: 10px; padding: 13px 12px; font-family: 'Syne', sans-serif;
+    font-size: .95rem; cursor: pointer; white-space: nowrap;
+  }
+  .otp-row { display: flex; gap: 10px; justify-content: center; margin: 8px 0; }
+  .otp-box {
+    width: 52px; height: 58px; text-align: center; font-size: 1.4rem; font-weight: 700;
+    background: var(--bg); border: 2px solid var(--border); border-radius: 10px;
+    color: var(--text); font-family: 'DM Mono', monospace; transition: border-color .2s;
+  }
+  .otp-box:focus { outline: none; border-color: var(--accent); }
+  .btn-primary {
+    width: 100%; padding: 14px; background: linear-gradient(135deg, var(--accent), var(--accent2));
+    border: none; border-radius: 10px; color: #fff; font-family: 'Syne', sans-serif;
+    font-size: 1rem; font-weight: 700; cursor: pointer; transition: opacity .2s, transform .1s;
+    letter-spacing: .3px;
+  }
+  .btn-primary:hover { opacity: .9; transform: translateY(-1px); }
+  .btn-primary:active { transform: translateY(0); }
+  .divider { display: flex; align-items: center; gap: 12px; margin: 20px 0; color: var(--muted); font-size: .8rem; }
+  .divider::before, .divider::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+  .btn-google {
+    width: 100%; padding: 13px; background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 10px; color: var(--text); font-family: 'Syne', sans-serif;
+    font-size: .95rem; font-weight: 600; cursor: pointer; display: flex;
+    align-items: center; justify-content: center; gap: 10px; transition: all .2s;
+  }
+  .btn-google:hover { border-color: var(--accent); }
+  .msg { padding: 10px 14px; border-radius: 8px; font-size: .85rem; margin-top: 12px; display: none; }
+  .msg.success { background: rgba(52,211,153,.1); border: 1px solid var(--accent3); color: var(--accent3); display: block; }
+  .msg.error { background: rgba(248,113,113,.1); border: 1px solid var(--danger); color: var(--danger); display: block; }
+  .resend { color: var(--accent); font-size: .85rem; cursor: pointer; text-align: center; margin-top: 10px; }
+  .resend:hover { text-decoration: underline; }
+
+  /* ─── Main App ─── */
+  #mainScreen { background: var(--bg); }
+  .main-layout {
+    display: flex; flex: 1; height: calc(100vh - 65px);
+  }
+
+  /* ─── Sidebar ─── */
+  .sidebar {
+    width: 240px; flex-shrink: 0; background: var(--surface);
+    border-right: 1px solid var(--border); padding: 20px 12px;
+    display: flex; flex-direction: column; gap: 4px; overflow-y: auto;
+  }
+  .sidebar-label { font-size: .7rem; color: var(--muted); padding: 4px 10px 8px; letter-spacing: 1px; text-transform: uppercase; }
+  .sidebar-item {
+    display: flex; align-items: center; gap: 10px; padding: 10px 12px;
+    border-radius: 9px; cursor: pointer; color: var(--muted);
+    font-size: .9rem; font-weight: 600; transition: all .2s; border: none; background: none; width: 100%;
+  }
+  .sidebar-item:hover { background: var(--surface2); color: var(--text); }
+  .sidebar-item.active { background: rgba(79,142,247,.15); color: var(--accent); }
+  .sidebar-item .icon { font-size: 1.1rem; }
+  .sidebar-divider { height: 1px; background: var(--border); margin: 8px 0; }
+  .sidebar-bottom { margin-top: auto; }
+  .user-chip {
+    display: flex; align-items: center; gap: 10px; padding: 10px 12px;
+    background: var(--surface2); border-radius: 10px; cursor: pointer;
+  }
+  .avatar {
+    width: 34px; height: 34px; background: linear-gradient(135deg, var(--accent), var(--accent2));
+    border-radius: 50%; display: flex; align-items: center; justify-content: center;
+    font-weight: 700; font-size: .85rem;
+  }
+  .user-info { flex: 1; min-width: 0; }
+  .user-name { font-size: .85rem; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .user-role { font-size: .72rem; color: var(--muted); }
+
+  /* ─── Content ─── */
+  .content { flex: 1; overflow-y: auto; }
+  .panel { display: none; padding: 28px 32px; animation: fadeIn .3s ease; }
+  .panel.active { display: block; }
+  @keyframes fadeIn { from { opacity:0; } to { opacity:1; } }
+  .panel-title { font-size: 1.6rem; font-weight: 800; margin-bottom: 6px; }
+  .panel-sub { color: var(--muted); font-size: .9rem; margin-bottom: 24px; }
+
+  /* ─── Dashboard ─── */
+  .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; margin-bottom: 28px; }
+  .stat-card {
+    background: var(--card); border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 20px; transition: transform .2s, border-color .2s;
+  }
+  .stat-card:hover { transform: translateY(-2px); border-color: var(--accent); }
+  .stat-num { font-size: 2rem; font-weight: 800; }
+  .stat-label { color: var(--muted); font-size: .8rem; margin-top: 2px; }
+  .stat-card.blue .stat-num { color: var(--accent); }
+  .stat-card.purple .stat-num { color: var(--accent2); }
+  .stat-card.green .stat-num { color: var(--accent3); }
+  .stat-card.warn .stat-num { color: var(--warn); }
+  .section-title { font-size: 1rem; font-weight: 700; margin-bottom: 14px; color: var(--text); }
+  .quick-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; }
+  .quick-card {
+    background: var(--card); border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 18px; cursor: pointer; transition: all .2s; text-align: center;
+  }
+  .quick-card:hover { border-color: var(--accent); background: rgba(79,142,247,.05); transform: translateY(-2px); }
+  .quick-icon { font-size: 1.8rem; margin-bottom: 8px; }
+  .quick-label { font-size: .85rem; font-weight: 600; }
+
+  /* ─── Q&A Panel ─── */
+  .subject-tabs { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 20px; }
+  .subj-tab {
+    padding: 8px 18px; border-radius: 20px; border: 1px solid var(--border);
+    background: var(--surface2); color: var(--muted); cursor: pointer;
+    font-family: 'Syne', sans-serif; font-size: .85rem; font-weight: 600; transition: all .2s;
+  }
+  .subj-tab.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .subj-tab:hover:not(.active) { border-color: var(--accent); color: var(--accent); }
+  .qa-search-row { display: flex; gap: 10px; margin-bottom: 20px; }
+  .qa-search { flex: 1; background: var(--surface2); border: 1px solid var(--border); border-radius: 10px; padding: 12px 16px; color: var(--text); font-family: 'Syne', sans-serif; font-size: .9rem; }
+  .qa-search:focus { outline: none; border-color: var(--accent); }
+  .btn-ask {
+    padding: 12px 22px; background: var(--accent); border: none; border-radius: 10px;
+    color: #fff; font-family: 'Syne', sans-serif; font-weight: 700; cursor: pointer; transition: opacity .2s;
+  }
+  .btn-ask:hover { opacity: .85; }
+  .qa-list { display: flex; flex-direction: column; gap: 12px; }
+  .qa-item {
+    background: var(--card); border: 1px solid var(--border); border-radius: var(--radius);
+    overflow: hidden; transition: border-color .2s;
+  }
+  .qa-item:hover { border-color: var(--border); }
+  .qa-q {
+    padding: 16px 18px; font-weight: 600; cursor: pointer;
+    display: flex; justify-content: space-between; align-items: center; gap: 10px;
+  }
+  .qa-q:hover { color: var(--accent); }
+  .qa-toggle { color: var(--muted); font-size: 1.1rem; transition: transform .3s; }
+  .qa-item.open .qa-toggle { transform: rotate(180deg); }
+  .qa-a {
+    display: none; padding: 0 18px 18px; color: var(--muted); line-height: 1.7;
+    font-family: 'Lora', serif; font-size: .95rem; border-top: 1px solid var(--border);
+    padding-top: 16px;
+  }
+  .qa-item.open .qa-a { display: block; }
+  .code-block {
+    background: #0d1117; border-radius: 8px; padding: 14px; margin: 10px 0;
+    font-family: 'DM Mono', monospace; font-size: .82rem; color: #a6e22e;
+    overflow-x: auto; border: 1px solid #1e2740;
+    white-space: pre;
+  }
+  .tag {
+    display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: .72rem;
+    font-weight: 600; margin-right: 6px; text-transform: uppercase;
+  }
+  .tag.bio { background: rgba(52,211,153,.15); color: var(--accent3); }
+  .tag.phys { background: rgba(251,191,36,.15); color: var(--warn); }
+  .tag.code { background: rgba(79,142,247,.15); color: var(--accent); }
+  .tag.math { background: rgba(167,139,250,.15); color: var(--accent2); }
+
+  /* ─── AI Chat ─── */
+  .chat-wrap { display: flex; flex-direction: column; height: calc(100vh - 170px); }
+  .chat-messages { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 16px; padding: 4px 0 16px; }
+  .msg-bubble { max-width: 70%; padding: 14px 18px; border-radius: 14px; line-height: 1.65; font-size: .9rem; }
+  .msg-bubble.user { background: var(--accent); color: #fff; border-radius: 14px 14px 4px 14px; align-self: flex-end; }
+  .msg-bubble.ai { background: var(--card); border: 1px solid var(--border); color: var(--text); border-radius: 14px 14px 14px 4px; align-self: flex-start; font-family: 'Lora', serif; }
+  .msg-bubble.ai .ai-label { font-family: 'Syne', sans-serif; font-size: .72rem; color: var(--accent); font-weight: 700; margin-bottom: 6px; }
+  .chat-input-row { display: flex; gap: 10px; padding-top: 14px; border-top: 1px solid var(--border); }
+  .chat-input {
+    flex: 1; background: var(--surface2); border: 1px solid var(--border); border-radius: 12px;
+    padding: 13px 16px; color: var(--text); font-family: 'Syne', sans-serif; font-size: .9rem; resize: none; min-height: 50px;
+  }
+  .chat-input:focus { outline: none; border-color: var(--accent); }
+  .btn-send {
+    padding: 12px 20px; background: linear-gradient(135deg, var(--accent), var(--accent2));
+    border: none; border-radius: 12px; color: #fff; font-size: 1.1rem; cursor: pointer; transition: opacity .2s;
+  }
+  .btn-send:hover { opacity: .85; }
+  .typing { display: flex; gap: 4px; align-items: center; padding: 10px 14px; background: var(--card); border: 1px solid var(--border); border-radius: 14px; align-self: flex-start; }
+  .dot { width: 7px; height: 7px; background: var(--muted); border-radius: 50%; animation: bounce .8s infinite; }
+  .dot:nth-child(2) { animation-delay: .15s; }
+  .dot:nth-child(3) { animation-delay: .3s; }
+  @keyframes bounce { 0%,60%,100% { transform:translateY(0); } 30% { transform:translateY(-6px); } }
+
+  /* ─── Profile ─── */
+  .profile-card {
+    background: var(--card); border: 1px solid var(--border); border-radius: 20px; padding: 32px;
+    max-width: 500px; margin-bottom: 20px;
+  }
+  .profile-avatar {
+    width: 80px; height: 80px; border-radius: 50%; background: linear-gradient(135deg, var(--accent), var(--accent2));
+    display: flex; align-items: center; justify-content: center; font-size: 2rem; font-weight: 800; margin-bottom: 16px;
+  }
+  .profile-name { font-size: 1.5rem; font-weight: 800; }
+  .profile-phone { color: var(--muted); margin-top: 4px; display: flex; align-items: center; gap: 6px; }
+  .badge { display: inline-block; padding: 4px 10px; border-radius: 6px; font-size: .75rem; font-weight: 600; background: rgba(52,211,153,.15); color: var(--accent3); margin-top: 10px; }
+  .profile-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 24px; }
+  .pstat { text-align: center; }
+  .pstat-num { font-size: 1.5rem; font-weight: 800; color: var(--accent); }
+  .pstat-label { font-size: .75rem; color: var(--muted); }
+  .edit-profile-btn {
+    margin-top: 20px; padding: 11px 22px; background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 10px; color: var(--text); font-family: 'Syne', sans-serif; cursor: pointer;
+    font-weight: 600; transition: all .2s;
+  }
+  .edit-profile-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+  /* ─── Toast ─── */
+  .toast {
+    position: fixed; bottom: 24px; right: 24px; z-index: 999;
+    background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
+    padding: 14px 20px; display: flex; align-items: center; gap: 10px;
+    box-shadow: 0 10px 30px rgba(0,0,0,.4); animation: slideIn .3s ease;
+    max-width: 320px; transform: translateX(400px); transition: transform .3s ease;
+  }
+  .toast.show { transform: translateX(0); }
+  .toast.success { border-color: var(--accent3); }
+  .toast.error { border-color: var(--danger); }
+  .toast-icon { font-size: 1.2rem; }
+  .toast-text { font-size: .88rem; }
+
+  /* ─── Loading Spinner ─── */
+  .spinner {
+    width: 20px; height: 20px; border: 2px solid rgba(255,255,255,.2);
+    border-top-color: #fff; border-radius: 50%; animation: spin .7s linear infinite; display: inline-block;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ─── Responsive ─── */
+  @media (max-width: 768px) {
+    .sidebar { display: none; }
+    .panel { padding: 20px 16px; }
+    .auth-card { padding: 32px 20px; }
+    nav { padding: 14px 16px; }
+    .nav-links .nav-btn:not(.primary) { display: none; }
+    .stats-grid { grid-template-columns: repeat(2, 1fr); }
+    .msg-bubble { max-width: 88%; }
+    .mobile-nav {
+      display: flex; position: fixed; bottom: 0; left: 0; right: 0; z-index: 99;
+      background: var(--surface); border-top: 1px solid var(--border);
+      padding: 10px 0 16px;
+    }
+    .mobile-nav-btn { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 3px; cursor: pointer; color: var(--muted); font-size: .65rem; font-weight: 600; border: none; background: none; }
+    .mobile-nav-btn.active { color: var(--accent); }
+    .mobile-nav-btn .icon { font-size: 1.3rem; }
+    .main-layout { height: auto; }
+    .content { padding-bottom: 70px; }
+    .chat-wrap { height: calc(100vh - 250px); }
+  }
+  @media (min-width: 769px) { .mobile-nav { display: none; } }
+
+  /* ─── Scrollbar ─── */
+  ::-webkit-scrollbar { width: 5px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 10px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--muted); }
+</style>
+</head>
+<body>
+<div id="app">
+
+<!-- ═══════════════════════════════════ AUTH SCREEN ═══════════════════════════════════ -->
+<div id="authScreen" class="screen active">
+  <div class="auth-card">
+    <div class="auth-title">StudyMind AI</div>
+    <div class="auth-sub">Your intelligent study companion 🎓</div>
+
+    <div class="tab-row">
+      <button class="tab active" id="loginTabBtn" onclick="switchAuthTab('login')">Login</button>
+      <button class="tab" id="registerTabBtn" onclick="switchAuthTab('register')">Register</button>
+    </div>
+
+    <!-- MOBILE OTP FORM (used for both Login & Register) -->
+    <div id="phoneStep1">
+      <!-- Name field: only shown on Register -->
+      <div class="form-group" id="nameGroup" style="display:none;">
+        <label class="form-label">Full Name</label>
+        <input class="form-input" type="text" id="nameInput" placeholder="Your full name"/>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Mobile Number</label>
+        <div class="phone-row">
+          <select class="country-code" id="countryCode">
+            <option value="+91">🇮🇳 +91</option>
+            <option value="+1">🇺🇸 +1</option>
+            <option value="+44">🇬🇧 +44</option>
+            <option value="+61">🇦🇺 +61</option>
+            <option value="+971">🇦🇪 +971</option>
+            <option value="+65">🇸🇬 +65</option>
+            <option value="+49">🇩🇪 +49</option>
+            <option value="+33">🇫🇷 +33</option>
+          </select>
+          <input class="form-input" type="tel" id="phoneInput" placeholder="9876543210" maxlength="10"/>
+        </div>
+      </div>
+      <button class="btn-primary" onclick="sendOTP()">
+        <span id="otpBtnText">Send OTP 📲</span>
+      </button>
+      <div class="msg" id="phoneMsg"></div>
+    </div>
+
+    <div id="phoneStep2" style="display:none;">
+      <p style="color:var(--muted);font-size:.9rem;margin-bottom:16px;">OTP sent to <strong id="sentToNum" style="color:var(--text);"></strong></p>
+      <label class="form-label">Enter 6-digit OTP</label>
+      <div class="otp-row">
+        <input class="otp-box" maxlength="1" oninput="otpMove(this, 0)"/>
+        <input class="otp-box" maxlength="1" oninput="otpMove(this, 1)"/>
+        <input class="otp-box" maxlength="1" oninput="otpMove(this, 2)"/>
+        <input class="otp-box" maxlength="1" oninput="otpMove(this, 3)"/>
+        <input class="otp-box" maxlength="1" oninput="otpMove(this, 4)"/>
+        <input class="otp-box" maxlength="1" oninput="otpMove(this, 5)"/>
+      </div>
+      <button class="btn-primary" onclick="verifyOTP()" style="margin-top:16px;">
+        <span id="verifyBtnText">Verify & Login ✓</span>
+      </button>
+      <p class="resend" onclick="resendOTP()">Resend OTP (<span id="resendTimer">30</span>s)</p>
+      <div class="msg" id="otpMsg"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════ MAIN SCREEN ═══════════════════════════════════ -->
+<div id="mainScreen" class="screen">
+  <nav>
+    <div class="nav-logo">Study<span>Mind</span></div>
+    <div class="nav-links">
+      <button class="nav-btn" onclick="showToast('🔔 No new notifications', 'success')">🔔</button>
+      <button class="nav-btn primary" onclick="logout()">Logout</button>
+    </div>
+  </nav>
+
+  <div class="main-layout">
+    <!-- Sidebar -->
+    <div class="sidebar">
+      <div class="sidebar-label">Menu</div>
+      <button class="sidebar-item active" onclick="showPanel('dashboard', this)"><span class="icon">🏠</span> Dashboard</button>
+      <button class="sidebar-item" onclick="showPanel('qa', this)"><span class="icon">❓</span> Q&A Bank</button>
+      <button class="sidebar-item" onclick="showPanel('chat', this)"><span class="icon">🤖</span> AI Tutor Chat</button>
+      <button class="sidebar-item" onclick="showPanel('notes', this)"><span class="icon">📝</span> My Notes</button>
+      <div class="sidebar-divider"></div>
+      <div class="sidebar-label">Subjects</div>
+      <button class="sidebar-item" onclick="filterSubject('Biology')"><span class="icon">🧬</span> Biology</button>
+      <button class="sidebar-item" onclick="filterSubject('Physics')"><span class="icon">⚛️</span> Physics</button>
+      <button class="sidebar-item" onclick="filterSubject('C Code')"><span class="icon">💻</span> C Programming</button>
+      <button class="sidebar-item" onclick="filterSubject('Math')"><span class="icon">📐</span> Mathematics</button>
+      <div class="sidebar-divider"></div>
+      <div class="sidebar-bottom">
+        <button class="sidebar-item" onclick="showPanel('profile', this)"><span class="icon">👤</span> Profile</button>
+        <div class="user-chip" style="margin-top:8px;" onclick="showPanel('profile', null)">
+          <div class="avatar" id="sideAvatar">U</div>
+          <div class="user-info">
+            <div class="user-name" id="sideUserName">Student</div>
+            <div class="user-role">📚 Active Learner</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="content">
+
+      <!-- DASHBOARD -->
+      <div class="panel active" id="panel-dashboard">
+        <div class="panel-title">Welcome back, <span id="greetName">Student</span>! 👋</div>
+        <div class="panel-sub">Here's your study overview for today</div>
+        <div class="stats-grid">
+          <div class="stat-card blue"><div class="stat-num" id="questCount">0</div><div class="stat-label">Questions Answered</div></div>
+          <div class="stat-card purple"><div class="stat-num" id="chatCount">0</div><div class="stat-label">AI Chats</div></div>
+          <div class="stat-card green"><div class="stat-num" id="noteCount">0</div><div class="stat-label">Notes Saved</div></div>
+          <div class="stat-card warn"><div class="stat-num">4</div><div class="stat-label">Subjects Available</div></div>
+        </div>
+        <div class="section-title">Quick Access</div>
+        <div class="quick-grid">
+          <div class="quick-card" onclick="showPanel('qa', null); filterSubject('Biology')">
+            <div class="quick-icon">🧬</div>
+            <div class="quick-label">Biology Q&A</div>
+          </div>
+          <div class="quick-card" onclick="showPanel('qa', null); filterSubject('Physics')">
+            <div class="quick-icon">⚛️</div>
+            <div class="quick-label">Physics Q&A</div>
+          </div>
+          <div class="quick-card" onclick="showPanel('qa', null); filterSubject('C Code')">
+            <div class="quick-icon">💻</div>
+            <div class="quick-label">C Programming</div>
+          </div>
+          <div class="quick-card" onclick="showPanel('chat', null)">
+            <div class="quick-icon">🤖</div>
+            <div class="quick-label">Ask AI Tutor</div>
+          </div>
+          <div class="quick-card" onclick="showPanel('notes', null)">
+            <div class="quick-icon">📝</div>
+            <div class="quick-label">My Notes</div>
+          </div>
+          <div class="quick-card" onclick="showPanel('profile', null)">
+            <div class="quick-icon">👤</div>
+            <div class="quick-label">My Profile</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Q&A BANK -->
+      <div class="panel" id="panel-qa">
+        <div class="panel-title">📚 Question & Answer Bank</div>
+        <div class="panel-sub">Browse Biology, Physics, C Programming & more</div>
+        <div class="subject-tabs" id="subjectTabs">
+          <button class="subj-tab active" onclick="filterSubject('All')">All</button>
+          <button class="subj-tab" onclick="filterSubject('Biology')">🧬 Biology</button>
+          <button class="subj-tab" onclick="filterSubject('Physics')">⚛️ Physics</button>
+          <button class="subj-tab" onclick="filterSubject('C Code')">💻 C Code</button>
+          <button class="subj-tab" onclick="filterSubject('Math')">📐 Math</button>
+        </div>
+        <div class="qa-search-row">
+          <input class="qa-search" type="text" id="qaSearch" placeholder="Search questions..." oninput="searchQA()"/>
+          <button class="btn-ask" onclick="searchQA()">🔍 Search</button>
+        </div>
+        <div class="qa-list" id="qaList"></div>
+      </div>
+
+      <!-- AI CHAT -->
+      <div class="panel" id="panel-chat">
+        <div class="panel-title">🤖 AI Tutor Chat</div>
+        <div class="panel-sub">Ask anything — Biology, Physics, C Code, Math, or any topic</div>
+        <div class="chat-wrap">
+          <div class="chat-messages" id="chatMessages">
+            <div class="msg-bubble ai">
+              <div class="ai-label">✨ StudyMind AI</div>
+              Hi! I'm your AI study tutor. Ask me anything — biology concepts, physics problems, C code explanations, math, or any subject. Let's learn together! 🎓
+            </div>
+          </div>
+          <div class="chat-input-row">
+            <textarea class="chat-input" id="chatInput" placeholder="Ask a question..." rows="1" onkeydown="chatEnter(event)"></textarea>
+            <button class="btn-send" onclick="sendChat()">➤</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- NOTES -->
+      <div class="panel" id="panel-notes">
+        <div class="panel-title">📝 My Notes</div>
+        <div class="panel-sub">Save quick notes and study summaries</div>
+        <div style="display:flex;gap:10px;margin-bottom:20px;">
+          <input class="qa-search" type="text" id="noteTitle" placeholder="Note title..." style="max-width:200px;"/>
+          <textarea class="qa-search" id="noteContent" placeholder="Write your note here..." style="flex:1;resize:none;"></textarea>
+          <button class="btn-ask" onclick="addNote()">+ Save</button>
+        </div>
+        <div id="notesList" style="display:flex;flex-direction:column;gap:12px;"></div>
+      </div>
+
+      <!-- PROFILE -->
+      <div class="panel" id="panel-profile">
+        <div class="panel-title">👤 My Profile</div>
+        <div class="panel-sub">Manage your account and preferences</div>
+        <div class="profile-card">
+          <div class="profile-avatar" id="profileAvatar">U</div>
+          <div class="profile-name" id="profileName">Student</div>
+          <div class="profile-phone" id="profileContact">📧 user@email.com</div>
+          <span class="badge">✅ Verified Account</span>
+          <div class="profile-stats">
+            <div class="pstat"><div class="pstat-num" id="pQA">0</div><div class="pstat-label">Q&As Viewed</div></div>
+            <div class="pstat"><div class="pstat-num" id="pChat">0</div><div class="pstat-label">AI Messages</div></div>
+            <div class="pstat"><div class="pstat-num" id="pNotes">0</div><div class="pstat-label">Notes</div></div>
+          </div>
+          <button class="edit-profile-btn" onclick="showToast('✏️ Profile editing coming soon!', 'success')">Edit Profile</button>
+          <button class="edit-profile-btn" style="margin-left:8px;border-color:var(--danger);color:var(--danger);" onclick="logout()">Logout</button>
+        </div>
+      </div>
+
+    </div><!-- end content -->
+  </div><!-- end main-layout -->
+
+  <!-- Mobile Nav -->
+  <div class="mobile-nav">
+    <button class="mobile-nav-btn active" onclick="showPanel('dashboard', null); mobileActive(this)"><span class="icon">🏠</span>Home</button>
+    <button class="mobile-nav-btn" onclick="showPanel('qa', null); mobileActive(this)"><span class="icon">❓</span>Q&A</button>
+    <button class="mobile-nav-btn" onclick="showPanel('chat', null); mobileActive(this)"><span class="icon">🤖</span>AI Chat</button>
+    <button class="mobile-nav-btn" onclick="showPanel('notes', null); mobileActive(this)"><span class="icon">📝</span>Notes</button>
+    <button class="mobile-nav-btn" onclick="showPanel('profile', null); mobileActive(this)"><span class="icon">👤</span>Profile</button>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast">
+  <span class="toast-icon" id="toastIcon">✅</span>
+  <span class="toast-text" id="toastText"></span>
+</div>
+
+<script>
+/* ═══════════════════════ STATE ═══════════════════════ */
+let state = {
+  user: null,
+  authMode: 'login',
+  inputTab: 'email',
+  otpSent: false,
+  generatedOTP: '',
+  resendInterval: null,
+  stats: { qa: 0, chat: 0, notes: 0 },
+  notes: [],
+  currentSubject: 'All'
+};
+
+/* ═══════════════════════ Q&A DATA ═══════════════════════ */
+const QA_DATA = [
+  // BIOLOGY
+  { subject: 'Biology', q: 'What is photosynthesis?', a: 'Photosynthesis is the process by which plants, algae, and some bacteria convert light energy (usually from the sun) into chemical energy stored as glucose. The overall equation is: 6CO₂ + 6H₂O + light energy → C₆H₁₂O₆ + 6O₂. It occurs in chloroplasts, primarily in the thylakoid membranes and stroma.' },
+  { subject: 'Biology', q: 'What is the difference between mitosis and meiosis?', a: 'Mitosis produces 2 genetically identical daughter cells (diploid), used for growth and repair. Meiosis produces 4 genetically unique daughter cells (haploid), used for sexual reproduction. Meiosis has two rounds of division (Meiosis I and II) and involves crossing over for genetic variation.' },
+  { subject: 'Biology', q: 'What is DNA and what is its structure?', a: 'DNA (Deoxyribonucleic Acid) is the molecule that carries genetic information. Its structure is a double helix — two strands wound around each other, held together by hydrogen bonds between complementary base pairs: Adenine (A) with Thymine (T), and Guanine (G) with Cytosine (C). Each strand is made of nucleotides containing a deoxyribose sugar, phosphate group, and a nitrogenous base.' },
+  { subject: 'Biology', q: 'What are the main differences between plant and animal cells?', a: 'Plant cells have a cell wall (made of cellulose), chloroplasts (for photosynthesis), and a large central vacuole. Animal cells lack these but have centrioles (for cell division) and smaller vacuoles. Both have a nucleus, mitochondria, endoplasmic reticulum, and cell membrane.' },
+  { subject: 'Biology', q: 'Explain the central dogma of molecular biology.', a: 'The central dogma describes the flow of genetic information: DNA → RNA → Protein. First, transcription copies DNA into messenger RNA (mRNA). Then, translation converts the mRNA sequence into a protein using ribosomes and transfer RNA (tRNA). Each triplet of mRNA bases (codon) codes for a specific amino acid.' },
+  { subject: 'Biology', q: 'What is osmosis?', a: 'Osmosis is the movement of water molecules through a selectively permeable membrane from an area of lower solute concentration (higher water concentration) to an area of higher solute concentration (lower water concentration). It continues until equilibrium is reached. This process is vital for water uptake in plant roots and kidney function in animals.' },
+  { subject: 'Biology', q: 'What are enzymes and how do they work?', a: 'Enzymes are biological catalysts — usually proteins — that speed up chemical reactions without being consumed. Each enzyme has an active site that is specific to its substrate (lock-and-key model or induced-fit model). Enzymes are affected by temperature and pH; they denature (lose shape) at extreme conditions. Examples: amylase (digests starch), pepsin (digests protein).' },
+  { subject: 'Biology', q: 'What is the human digestive system process?', a: 'Digestion starts in the mouth (mechanical chewing + amylase). Food travels down the esophagus to the stomach (HCl + pepsin breaks proteins). Then to the small intestine where most absorption occurs (villi/microvilli absorb nutrients). The large intestine absorbs water. Liver produces bile; pancreas secretes digestive enzymes. Waste exits via the rectum and anus.' },
+
+  // PHYSICS
+  { subject: 'Physics', q: "What are Newton's three laws of motion?", a: "1st Law (Inertia): An object at rest stays at rest, and an object in motion stays in motion with constant velocity, unless acted upon by an external force.\n2nd Law (F=ma): The force on an object equals its mass times its acceleration.\n3rd Law (Action-Reaction): For every action, there is an equal and opposite reaction." },
+  { subject: 'Physics', q: 'What is the difference between speed and velocity?', a: 'Speed is a scalar quantity — it only has magnitude (e.g., 60 km/h). Velocity is a vector quantity — it has both magnitude AND direction (e.g., 60 km/h north). An object moving in a circle at constant speed has changing velocity because its direction changes.' },
+  { subject: 'Physics', q: "What is Ohm's Law?", a: "Ohm's Law states that the current (I) through a conductor between two points is directly proportional to the voltage (V) across those points and inversely proportional to the resistance (R): V = IR. This is valid for ohmic conductors (like metals) at constant temperature." },
+  { subject: 'Physics', q: 'Explain the electromagnetic spectrum.', a: 'The electromagnetic spectrum is the range of all types of electromagnetic radiation, ordered by frequency/wavelength: Radio waves → Microwaves → Infrared → Visible light → Ultraviolet → X-rays → Gamma rays. All travel at the speed of light (3×10⁸ m/s) in vacuum. Higher frequency = more energy (E=hf).' },
+  { subject: 'Physics', q: "What is Einstein's theory of relativity?", a: 'Special Relativity (1905): The laws of physics are the same for all observers in uniform motion, and the speed of light is constant for all observers. Key results: time dilation, length contraction, and E=mc². General Relativity (1915): Gravity is the curvature of spacetime caused by mass/energy.' },
+  { subject: 'Physics', q: 'What is the law of conservation of energy?', a: 'Energy cannot be created or destroyed; it can only be transferred or converted from one form to another. The total energy of an isolated system remains constant. For example, a falling object converts potential energy (PE = mgh) to kinetic energy (KE = ½mv²), with the total remaining constant (ignoring friction).' },
+  { subject: 'Physics', q: 'What is sound and how does it travel?', a: 'Sound is a mechanical longitudinal wave that requires a medium (solid, liquid, or gas) to travel. It is produced by vibrating objects that create compressions and rarefactions in the medium. Speed of sound: ~343 m/s in air, ~1480 m/s in water, ~5120 m/s in steel. Sound cannot travel in vacuum.' },
+  { subject: 'Physics', q: 'What is the Doppler effect?', a: 'The Doppler effect is the change in frequency (and perceived pitch) of a wave as the source and observer move relative to each other. If the source moves toward you, frequency increases (higher pitch). If it moves away, frequency decreases (lower pitch). Examples: ambulance siren, radar speed guns, astronomical redshift.' },
+
+  // C CODE
+  { subject: 'C Code', q: 'What is a pointer in C?', a: 'A pointer is a variable that stores the memory address of another variable. Declared with *, e.g. int *p;. Use & to get an address: p = &x;. Use * to dereference (access the value): *p = 10;. Pointers are fundamental for dynamic memory allocation, arrays, and function arguments.', code: 'int x = 42;\nint *p = &x;      // p holds address of x\nprintf("%d", *p); // prints 42 (dereference)\n*p = 100;         // changes x to 100' },
+  { subject: 'C Code', q: 'What is the difference between malloc() and calloc()?', a: 'Both allocate heap memory dynamically. malloc(size) allocates a block of "size" bytes and returns an uninitialized pointer. calloc(n, size) allocates n*size bytes and initializes all bytes to zero. Both return NULL on failure. Always free() allocated memory to avoid leaks.', code: 'int *a = (int*)malloc(5 * sizeof(int));  // uninitialized\nint *b = (int*)calloc(5, sizeof(int));   // initialized to 0\nfree(a);\nfree(b);' },
+  { subject: 'C Code', q: 'Explain struct in C with an example.', a: 'A struct (structure) is a user-defined data type that groups variables of different types under one name. It is used to represent a record. Members are accessed using the dot operator (.) for variables or arrow operator (->) for pointers.', code: 'struct Student {\n    char name[50];\n    int age;\n    float grade;\n};\n\nstruct Student s1;\nstrcpy(s1.name, "Alice");\ns1.age = 20;\ns1.grade = 95.5;\nprintf("%s is %d years old", s1.name, s1.age);' },
+  { subject: 'C Code', q: 'What is a linked list in C?', a: 'A linked list is a dynamic data structure where each node contains data and a pointer to the next node. Unlike arrays, linked lists do not require contiguous memory. They support efficient insertion/deletion at O(1) if the position is known, but O(n) search.', code: 'struct Node {\n    int data;\n    struct Node *next;\n};\n\n// Create a node\nstruct Node *head = (struct Node*)malloc(sizeof(struct Node));\nhead->data = 10;\nhead->next = NULL;' },
+  { subject: 'C Code', q: 'What is the difference between array and pointer in C?', a: 'An array name is a constant pointer to its first element. However, a pointer is a variable that can point to any address. Arrays allocate memory on the stack; pointers can point to heap memory (malloc). You cannot increment an array name, but you can increment a pointer.', code: 'int arr[] = {1, 2, 3};\nint *p = arr;    // p points to arr[0]\np++;             // p now points to arr[1]\nprintf("%d", *p); // prints 2\n// arr++; would be an ERROR!' },
+  { subject: 'C Code', q: 'Write a C program to find factorial using recursion.', a: 'Recursion is when a function calls itself. For factorial: n! = n × (n-1)! with base case 0! = 1. Recursion uses the call stack, so deep recursion can cause stack overflow. For large factorials, use iterative approach.', code: '#include <stdio.h>\n\nint factorial(int n) {\n    if (n == 0 || n == 1)  // base case\n        return 1;\n    return n * factorial(n - 1);  // recursive case\n}\n\nint main() {\n    printf("5! = %d\\n", factorial(5));  // Output: 120\n    return 0;\n}' },
+  { subject: 'C Code', q: 'What are storage classes in C?', a: 'C has 4 storage classes: auto (default for local vars, stored on stack), register (requests CPU register for faster access), static (retains value between function calls, stored in data segment), extern (declares a global variable defined elsewhere).', code: 'void counter() {\n    static int count = 0;  // retains value!\n    count++;\n    printf("Count: %d\\n", count);\n}\n// Calling counter() 3 times prints: 1, 2, 3' },
+  { subject: 'C Code', q: 'Explain file handling in C.', a: 'C provides file I/O through stdio.h. Use fopen() to open, fprintf()/fscanf() or fwrite()/fread() to write/read, and fclose() to close. Always check if fopen() returned NULL (file open failed).', code: '#include <stdio.h>\n\nint main() {\n    FILE *fp = fopen("data.txt", "w");\n    if (fp == NULL) {\n        printf("Error opening file!");\n        return 1;\n    }\n    fprintf(fp, "Hello, File!\\n");\n    fclose(fp);\n    return 0;\n}' },
+
+  // MATH
+  { subject: 'Math', q: 'What is the quadratic formula?', a: 'For a quadratic equation ax² + bx + c = 0, the solutions (roots) are given by the quadratic formula: x = (-b ± √(b²-4ac)) / 2a. The discriminant (b²-4ac) determines the nature of roots: >0 means two real roots, =0 means one real root (repeated), <0 means two complex/imaginary roots.' },
+  { subject: 'Math', q: 'What is the Pythagorean theorem?', a: "In a right-angled triangle, the square of the hypotenuse (the side opposite the right angle) equals the sum of squares of the other two sides: a² + b² = c². It is used to find missing sides of right triangles and is the basis for the distance formula in coordinate geometry: d = √((x₂-x₁)² + (y₂-y₁)²)." },
+  { subject: 'Math', q: 'What is a derivative in calculus?', a: "A derivative measures the instantaneous rate of change of a function. If f(x) is a function, its derivative f'(x) or dy/dx represents the slope of the tangent line at any point. Key rules: Power rule: d/dx[xⁿ] = nxⁿ⁻¹, Product rule: d/dx[uv] = u'v + uv', Chain rule: d/dx[f(g(x))] = f'(g(x))·g'(x)." },
+  { subject: 'Math', q: 'Explain permutation vs combination.', a: 'Permutation: arrangements where ORDER matters. P(n,r) = n!/(n-r)!. Example: arranging 3 books from 5 = P(5,3) = 60 ways.\nCombination: selections where ORDER does not matter. C(n,r) = n!/[r!(n-r)!]. Example: choosing 3 books from 5 = C(5,3) = 10 ways. Remember: P ≥ C always.' },
+];
+
+/* ═══════════════════════ CONFIG — paste your Fast2SMS key here ═══════════════════════ */
+// Get a free API key at https://www.fast2sms.com → Dashboard → Dev API
+// For non-India numbers, replace sendSMS() with your preferred SMS provider.
+const FAST2SMS_API_KEY = ''; // <-- paste your Fast2SMS API key here
+
+/* ─── Send real SMS via Fast2SMS (India +91 numbers) ─── */
+async function sendSMSFast2SMS(phone10digit, otp) {
+  // Fast2SMS Quick SMS (DLT-free, sandbox-friendly for testing)
+  const url = `https://www.fast2sms.com/dev/bulkV2?authorization=${FAST2SMS_API_KEY}&variables_values=${otp}&route=otp&numbers=${phone10digit}`;
+  const resp = await fetch(url, { method: 'GET' });
+  const data = await resp.json();
+  if (!data.return) throw new Error(data.message || 'SMS failed');
+  return true;
+}
+
+/* ═══════════════════════ AUTH FUNCTIONS ═══════════════════════ */
+function switchAuthTab(mode) {
+  state.authMode = mode;
+  document.getElementById('loginTabBtn').classList.toggle('active', mode === 'login');
+  document.getElementById('registerTabBtn').classList.toggle('active', mode === 'register');
+  document.getElementById('nameGroup').style.display = mode === 'register' ? 'block' : 'none';
+  document.getElementById('verifyBtnText').textContent = mode === 'login' ? 'Verify & Login \u2713' : 'Verify & Register \u2713';
+  document.getElementById('phoneStep1').style.display = 'block';
+  document.getElementById('phoneStep2').style.display = 'none';
+  document.getElementById('phoneMsg').className = 'msg';
+}
+
+async function sendOTP() {
+  const phone = document.getElementById('phoneInput').value.trim();
+  const code = document.getElementById('countryCode').value;
+  const msgEl = document.getElementById('phoneMsg');
+  msgEl.className = 'msg';
+
+  if (state.authMode === 'register') {
+    const name = document.getElementById('nameInput').value.trim();
+    if (!name) { msgEl.className = 'msg error'; msgEl.textContent = 'Please enter your full name.'; return; }
+  }
+  if (!phone || phone.length < 8) { msgEl.className = 'msg error'; msgEl.textContent = 'Enter a valid mobile number.'; return; }
+
+  const btn = document.querySelector('#phoneStep1 .btn-primary');
+  btn.innerHTML = '<span class="spinner"></span>';
+  btn.disabled = true;
+
+  // Generate a 6-digit OTP
+  state.generatedOTP = Math.floor(100000 + Math.random() * 900000).toString();
+  state.phoneNumber = code + phone;
+
+  try {
+    if (code === '+91' && FAST2SMS_API_KEY) {
+      // Real SMS for Indian numbers via Fast2SMS
+      await sendSMSFast2SMS(phone, state.generatedOTP);
+      btn.innerHTML = '<span id="otpBtnText">Send OTP 📲</span>';
+      btn.disabled = false;
+      document.getElementById('phoneStep1').style.display = 'none';
+      document.getElementById('phoneStep2').style.display = 'block';
+      document.getElementById('sentToNum').textContent = code + ' ' + phone;
+      msgEl.className = 'msg success';
+      msgEl.textContent = '✅ OTP sent to your mobile via SMS!';
+    } else if (!FAST2SMS_API_KEY) {
+      // No API key set — show OTP on screen (demo/dev mode)
+      btn.innerHTML = '<span id="otpBtnText">Send OTP 📲</span>';
+      btn.disabled = false;
+      document.getElementById('phoneStep1').style.display = 'none';
+      document.getElementById('phoneStep2').style.display = 'block';
+      document.getElementById('sentToNum').textContent = code + ' ' + phone;
+      msgEl.className = 'msg error';
+      msgEl.textContent = '⚠️ No API key set. Demo OTP: ' + state.generatedOTP;
+    } else {
+      // Non-Indian number with no backend — show OTP on screen
+      btn.innerHTML = '<span id="otpBtnText">Send OTP 📲</span>';
+      btn.disabled = false;
+      document.getElementById('phoneStep1').style.display = 'none';
+      document.getElementById('phoneStep2').style.display = 'block';
+      document.getElementById('sentToNum').textContent = code + ' ' + phone;
+      msgEl.className = 'msg error';
+      msgEl.textContent = '⚠️ International SMS not configured. Demo OTP: ' + state.generatedOTP;
+    }
+    startResendTimer();
+  } catch (err) {
+    btn.innerHTML = '<span id="otpBtnText">Send OTP 📲</span>';
+    btn.disabled = false;
+    msgEl.className = 'msg error';
+    msgEl.textContent = '❌ Failed to send OTP: ' + (err.message || 'Check your API key and try again.');
+  }
+}
+
+function otpMove(el, idx) {
+  if (el.value.length === 1 && idx < 5) {
+    document.querySelectorAll('.otp-box')[idx + 1].focus();
+  }
+}
+
+function verifyOTP() {
+  const boxes = document.querySelectorAll('.otp-box');
+  const enteredOTP = Array.from(boxes).map(b => b.value).join('');
+  const msgEl = document.getElementById('otpMsg');
+  msgEl.className = 'msg';
+
+  if (enteredOTP.length < 6) { msgEl.className = 'msg error'; msgEl.textContent = 'Enter complete 6-digit OTP.'; return; }
+  if (enteredOTP !== state.generatedOTP) { msgEl.className = 'msg error'; msgEl.textContent = '❌ Incorrect OTP. Try again.'; return; }
+
+  const btn = document.querySelector('#phoneStep2 .btn-primary');
+  btn.innerHTML = '<span class="spinner"></span>';
+  btn.disabled = true;
+  clearInterval(state.resendInterval);
+
+  setTimeout(() => {
+    const enteredName = document.getElementById('nameInput').value.trim();
+    const displayName = state.authMode === 'register' && enteredName ? enteredName : 'Student';
+    loginUser({ name: displayName, contact: state.phoneNumber, type: 'phone' });
+    btn.disabled = false;
+  }, 1000);
+}
+
+async function resendOTP() {
+  const boxes = document.querySelectorAll('.otp-box');
+  boxes.forEach(b => b.value = '');
+  state.generatedOTP = Math.floor(100000 + Math.random() * 900000).toString();
+
+  const phone = document.getElementById('phoneInput').value.trim();
+  const code = document.getElementById('countryCode').value;
+
+  try {
+    if (code === '+91' && FAST2SMS_API_KEY) {
+      await sendSMSFast2SMS(phone, state.generatedOTP);
+      showToast('📲 New OTP sent to your mobile!', 'success');
+    } else {
+      showToast('📲 Demo OTP: ' + state.generatedOTP, 'success');
+    }
+  } catch (err) {
+    showToast('❌ Resend failed. Demo OTP: ' + state.generatedOTP, 'error');
+  }
+  startResendTimer();
+}
+
+function startResendTimer() {
+  let t = 30;
+  clearInterval(state.resendInterval);
+  document.getElementById('resendTimer').textContent = t;
+  state.resendInterval = setInterval(() => {
+    t--;
+    document.getElementById('resendTimer').textContent = t;
+    if (t <= 0) { clearInterval(state.resendInterval); document.getElementById('resendTimer').textContent = '0'; }
+  }, 1000);
+}
+
+function loginUser(user) {
+  state.user = user;
+  state.stats = { qa: 0, chat: 0, notes: 0 };
+  const initial = user.name.charAt(0).toUpperCase();
+  document.getElementById('sideAvatar').textContent = initial;
+  document.getElementById('profileAvatar').textContent = initial;
+  document.getElementById('sideUserName').textContent = user.name;
+  document.getElementById('greetName').textContent = user.name.split(' ')[0];
+  document.getElementById('profileName').textContent = user.name;
+  document.getElementById('profileContact').innerHTML = (user.type === 'phone' ? '📱 ' : '📧 ') + user.contact;
+  document.getElementById('authScreen').classList.remove('active');
+  document.getElementById('mainScreen').classList.add('active');
+  renderQA('All');
+  renderNotes();
+  showToast('👋 Welcome, ' + user.name + '!', 'success');
+}
+
+function logout() {
+  state.user = null;
+  document.getElementById('mainScreen').classList.remove('active');
+  document.getElementById('authScreen').classList.add('active');
+  // Reset OTP form
+  document.getElementById('phoneStep1').style.display = 'block';
+  document.getElementById('phoneStep2').style.display = 'none';
+  document.getElementById('phoneInput').value = '';
+  document.querySelectorAll('.otp-box').forEach(b => b.value = '');
+  showToast('👋 Logged out successfully', 'success');
+}
+
+/* ═══════════════════════ PANEL NAVIGATION ═══════════════════════ */
+function showPanel(name, btn) {
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.getElementById('panel-' + name).classList.add('active');
+  document.querySelectorAll('.sidebar-item').forEach(s => s.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  updateStats();
+}
+
+function mobileActive(btn) {
+  document.querySelectorAll('.mobile-nav-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+}
+
+/* ═══════════════════════ Q&A ═══════════════════════ */
+function renderQA(subject, search = '') {
+  const list = document.getElementById('qaList');
+  const filtered = QA_DATA.filter(item =>
+    (subject === 'All' || item.subject === subject) &&
+    (search === '' || item.q.toLowerCase().includes(search.toLowerCase()) || item.a.toLowerCase().includes(search.toLowerCase()))
+  );
+
+  list.innerHTML = filtered.map((item, i) => `
+    <div class="qa-item" id="qai-${i}">
+      <div class="qa-q" onclick="toggleQA('qai-${i}')">
+        <div>
+          <span class="tag ${item.subject === 'Biology' ? 'bio' : item.subject === 'Physics' ? 'phys' : item.subject === 'C Code' ? 'code' : 'math'}">${item.subject}</span>
+          ${item.q}
+        </div>
+        <span class="qa-toggle">▼</span>
+      </div>
+      <div class="qa-a">
+        ${item.a.replace(/\n/g, '<br>')}
+        ${item.code ? `<div class="code-block">${escapeHtml(item.code)}</div>` : ''}
+      </div>
+    </div>
+  `).join('');
+
+  if (filtered.length === 0) {
+    list.innerHTML = '<div style="color:var(--muted);text-align:center;padding:40px;">No questions found. Try a different search or subject.</div>';
+  }
+
+  // Update subject tab active state
+  document.querySelectorAll('.subj-tab').forEach(t => {
+    t.classList.toggle('active', t.textContent.includes(subject) || (subject === 'All' && t.textContent === 'All'));
+  });
+
+  state.currentSubject = subject;
+}
+
+function toggleQA(id) {
+  const item = document.getElementById(id);
+  const wasOpen = item.classList.contains('open');
+  document.querySelectorAll('.qa-item').forEach(i => i.classList.remove('open'));
+  if (!wasOpen) {
+    item.classList.add('open');
+    state.stats.qa++;
+    updateStats();
+  }
+}
+
+function filterSubject(subject) {
+  renderQA(subject, document.getElementById('qaSearch')?.value || '');
+  showPanel('qa', null);
+}
+
+function searchQA() {
+  renderQA(state.currentSubject, document.getElementById('qaSearch').value);
+}
+
+function escapeHtml(str) {
+  return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+/* ═══════════════════════ AI CHAT ═══════════════════════ */
+const AI_RESPONSES = {
+  photosynthesis: "Photosynthesis converts light energy to chemical energy: 6CO₂ + 6H₂O + light → C₆H₁₂O₆ + 6O₂. It has two stages: the light-dependent reactions (in thylakoids) and the Calvin cycle (in stroma).",
+  mitosis: "Mitosis produces 2 identical diploid cells for growth/repair. Phases: Prophase → Metaphase → Anaphase → Telophase → Cytokinesis. Compare to meiosis which produces 4 haploid gametes.",
+  gravity: "Gravity is a fundamental force described by Newton's Law: F = Gm₁m₂/r². Einstein's General Relativity explains it as the curvature of spacetime. On Earth, g ≈ 9.81 m/s².",
+  pointer: "In C, a pointer stores a memory address. Declare: int *p; Get address: p = &x; Access value: *p. Key uses: dynamic memory (malloc), arrays, passing by reference.",
+  recursion: "Recursion is when a function calls itself. Must have a base case to stop. Classic example: factorial(n) = n × factorial(n-1), base: factorial(0) = 1.",
+  derivative: "A derivative f'(x) measures the instantaneous rate of change. Power rule: d/dx[xⁿ] = nxⁿ⁻¹. Product rule: d/dx[uv] = u'v + uv'. Chain rule: d/dx[f(g(x))] = f'(g(x))·g'(x).",
+  newton: "Newton's 3 Laws: 1) Inertia — objects resist changes in motion. 2) F = ma — force equals mass times acceleration. 3) Action-Reaction — every action has an equal opposite reaction.",
+  dna: "DNA is a double helix made of nucleotides. Base pairs: A-T and G-C. It carries genetic information and is transcribed to RNA, then translated to proteins (central dogma).",
+};
+
+function getAIResponse(message) {
+  const msg = message.toLowerCase();
+  for (const [key, response] of Object.entries(AI_RESPONSES)) {
+    if (msg.includes(key)) return response;
+  }
+
+  // Subject-specific smart responses
+  if (msg.includes('biology') || msg.includes('cell') || msg.includes('organ') || msg.includes('protein')) {
+    return "Great biology question! Biology covers life at all scales — from molecules (DNA, proteins, enzymes) to cells (prokaryotic/eukaryotic), tissues, organs, and ecosystems. Which specific topic interests you? I cover photosynthesis, cell division, genetics, enzymes, digestion, and more!";
+  }
+  if (msg.includes('physics') || msg.includes('force') || msg.includes('energy') || msg.includes('wave') || msg.includes('electric')) {
+    return "Excellent physics question! Physics explains the universe through laws and math. Key areas: Mechanics (motion, forces, energy), Thermodynamics (heat), Electromagnetism (circuits, waves), Optics (light), Modern Physics (quantum, relativity). What specific concept do you need help with?";
+  }
+  if (msg.includes('c ') || msg.includes('code') || msg.includes('program') || msg.includes('function') || msg.includes('array') || msg.includes('loop')) {
+    return "Good C programming question! C is a powerful low-level language. Core concepts: variables & data types, control flow (if/for/while), functions, arrays, pointers, structs, dynamic memory (malloc/free), file I/O. The Q&A bank has detailed examples with code. What specific topic in C do you need?";
+  }
+  if (msg.includes('math') || msg.includes('calculus') || msg.includes('algebra') || msg.includes('equation')) {
+    return "Great math question! Mathematics is the language of the universe. Topics I can help with: Algebra (equations, polynomials), Geometry (Pythagorean theorem, areas), Calculus (derivatives, integrals), Statistics (mean, standard deviation, probability), Discrete Math (combinations, permutations). What area do you need?";
+  }
+  if (msg.includes('hello') || msg.includes('hi') || msg.includes('hey')) {
+    return "Hello! 👋 I'm your AI study tutor. I can help you with Biology, Physics, C Programming, Mathematics, and more. What would you like to study today?";
+  }
+  if (msg.includes('help') || msg.includes('how')) {
+    return "I'm here to help! 🎓 You can ask me about: 🧬 Biology (cells, DNA, photosynthesis, etc.), ⚛️ Physics (Newton's laws, electricity, etc.), 💻 C Programming (pointers, arrays, structs, etc.), 📐 Math (calculus, algebra, etc.). Also check the Q&A Bank for detailed answers with code examples!";
+  }
+  return "That's a great question! 🤔 I'm a study AI specialized in Biology, Physics, C Programming, and Mathematics. For detailed Q&A with code examples, check the Q&A Bank. You can also be more specific — like 'explain mitosis', 'what is ohm's law', 'explain pointers in C', or 'what is a derivative'!";
+}
+
+async function sendChat() {
+  const input = document.getElementById('chatInput');
+  const msg = input.value.trim();
+  if (!msg) return;
+
+  const messages = document.getElementById('chatMessages');
+  input.value = '';
+
+  // User bubble
+  messages.innerHTML += `<div class="msg-bubble user">${msg}</div>`;
+
+  // Typing indicator
+  const typingId = 'typing-' + Date.now();
+  messages.innerHTML += `<div class="typing" id="${typingId}"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>`;
+  messages.scrollTop = messages.scrollHeight;
+
+  await new Promise(r => setTimeout(r, 1200 + Math.random() * 800));
+
+  document.getElementById(typingId)?.remove();
+
+  const response = getAIResponse(msg);
+  messages.innerHTML += `<div class="msg-bubble ai"><div class="ai-label">✨ StudyMind AI</div>${response}</div>`;
+  messages.scrollTop = messages.scrollHeight;
+
+  state.stats.chat++;
+  updateStats();
+}
+
+function chatEnter(e) {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendChat(); }
+}
+
+/* ═══════════════════════ NOTES ═══════════════════════ */
+function addNote() {
+  const title = document.getElementById('noteTitle').value.trim();
+  const content = document.getElementById('noteContent').value.trim();
+  if (!title && !content) { showToast('⚠️ Enter a title or content', 'error'); return; }
+
+  const note = { id: Date.now(), title: title || 'Untitled Note', content, date: new Date().toLocaleDateString() };
+  state.notes.unshift(note);
+  document.getElementById('noteTitle').value = '';
+  document.getElementById('noteContent').value = '';
+  renderNotes();
+  state.stats.notes++;
+  updateStats();
+  showToast('📝 Note saved!', 'success');
+}
+
+function deleteNote(id) {
+  state.notes = state.notes.filter(n => n.id !== id);
+  renderNotes();
+  state.stats.notes = state.notes.length;
+  updateStats();
+}
+
+function renderNotes() {
+  const list = document.getElementById('notesList');
+  if (state.notes.length === 0) {
+    list.innerHTML = '<div style="color:var(--muted);text-align:center;padding:40px;">No notes yet. Add your first note above! ✏️</div>';
+    return;
+  }
+  list.innerHTML = state.notes.map(n => `
+    <div class="stat-card" style="background:var(--card);">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+        <div>
+          <div style="font-weight:700;margin-bottom:6px;">${n.title}</div>
+          <div style="color:var(--muted);font-size:.88rem;font-family:'Lora',serif;">${n.content}</div>
+          <div style="color:var(--muted);font-size:.75rem;margin-top:8px;">📅 ${n.date}</div>
+        </div>
+        <button onclick="deleteNote(${n.id})" style="background:none;border:none;color:var(--danger);cursor:pointer;font-size:1.1rem;padding:4px;">🗑️</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+/* ═══════════════════════ STATS ═══════════════════════ */
+function updateStats() {
+  document.getElementById('questCount').textContent = state.stats.qa;
+  document.getElementById('chatCount').textContent = state.stats.chat;
+  document.getElementById('noteCount').textContent = state.notes.length;
+  document.getElementById('pQA').textContent = state.stats.qa;
+  document.getElementById('pChat').textContent = state.stats.chat;
+  document.getElementById('pNotes').textContent = state.notes.length;
+}
+
+/* ═══════════════════════ TOAST ═══════════════════════ */
+function showToast(msg, type = 'success') {
+  const toast = document.getElementById('toast');
+  document.getElementById('toastText').textContent = msg;
+  document.getElementById('toastIcon').textContent = type === 'success' ? '✅' : '❌';
+  toast.className = 'toast ' + type;
+  toast.classList.add('show');
+  clearTimeout(state.toastTimer);
+  state.toastTimer = setTimeout(() => toast.classList.remove('show'), 3000);
+}
+
+/* ═══════════════════════ INIT ═══════════════════════ */
+renderQA('All');
+</script>
+</body>
+</html>
